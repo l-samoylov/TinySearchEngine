@@ -1,0 +1,159 @@
+bash -v ./testing.sh
+module () {  local _mlredir=1;
+ if [ -n "${MODULES_REDIRECT_OUTPUT+x}" ]; then
+ if [ "$MODULES_REDIRECT_OUTPUT" = '0' ]; then
+ _mlredir=0;
+ else
+ if [ "$MODULES_REDIRECT_OUTPUT" = '1' ]; then
+ _mlredir=1;
+ fi;
+ fi;
+ fi;
+ case " $@ " in 
+ *' --no-redirect '*)
+ _mlredir=0
+ ;;
+ *' --redirect '*)
+ _mlredir=1
+ ;;
+ esac;
+ if [ $_mlredir -eq 0 ]; then
+ _module_raw "$@";
+ else
+ _module_raw "$@" 2>&1;
+ fi
+}
+ml () {  module ml "$@"
+}
+_module_raw () {  eval "$(/usr/bin/tclsh8.6 '/usr/lib/x86_64-linux-gnu/modulecmd.tcl' bash "$@")";
+ _mlstatus=$?;
+ return $_mlstatus
+}
+#!/bin/bash
+
+# Lisa Samoylov CS50 Spring 2025
+# testing.sh - testing both indexer and indextest
+
+echo "Setting up testing environment..."
+Setting up testing environment...
+
+# Make a directory to store outputs
+mkdir testing
+
+# Make a read-only directory
+mkdir readonly-dir
+chmod -w readonly-dir
+
+# Make a read-only file
+touch readonly-file
+chmod -w readonly-file
+
+echo ""
+
+echo "Testing indexer with bad arguments..."
+Testing indexer with bad arguments...
+
+echo "Test 1: No arguments"
+Test 1: No arguments
+./indexer
+./testing.sh: line 23: ./indexer: No such file or directory
+
+echo "Test 2: Only one argument"
+Test 2: Only one argument
+./indexer ../data/letters-0
+./testing.sh: line 26: ./indexer: No such file or directory
+
+echo "Test 3: Too many arguments"
+Test 3: Too many arguments
+./indexer ../data/letters-0 testing/index extra
+./testing.sh: line 29: ./indexer: No such file or directory
+
+echo "Test 4: Nonexistent page directory"
+Test 4: Nonexistent page directory
+./indexer not-real-dir testing/index
+./testing.sh: line 32: ./indexer: No such file or directory
+
+echo "Test 5: Not a crawler-produced directory"
+Test 5: Not a crawler-produced directory
+./indexer . testing/index
+./testing.sh: line 35: ./indexer: No such file or directory
+
+echo "Test 6: Index file in nonexistent directory"
+Test 6: Index file in nonexistent directory
+./indexer ../data/letters-0 no-such-dir/index
+./testing.sh: line 38: ./indexer: No such file or directory
+
+echo "Test 7: Index file in read-only directory"
+Test 7: Index file in read-only directory
+./indexer ../data/letters-0 readonly-dir/index
+./testing.sh: line 41: ./indexer: No such file or directory
+
+echo "Test 8: Index file is a read-only file"
+Test 8: Index file is a read-only file
+./indexer ../data/letters-0 readonly-file
+./testing.sh: line 44: ./indexer: No such file or directory
+
+echo ""
+
+echo "Running indexer and indextest on valid directories..."
+Running indexer and indextest on valid directories...
+
+echo "Testing with ../data/letters-0"
+Testing with ../data/letters-0
+./indexer ../data/letters-0 testing/index-letters-0
+./testing.sh: line 50: ./indexer: No such file or directory
+./indextest testing/index-letters-0 testing/rebuild-letters-0
+./testing.sh: line 51: ./indextest: No such file or directory
+
+echo "Testing with ../data/letters-1"
+Testing with ../data/letters-1
+./indexer ../data/letters-1 testing/index-letters-1
+./testing.sh: line 54: ./indexer: No such file or directory
+./indextest testing/index-letters-1 testing/rebuild-letters-1
+./testing.sh: line 55: ./indextest: No such file or directory
+
+echo "Testing with ../data/letters-10"
+Testing with ../data/letters-10
+./indexer ../data/letters-10 testing/index-letters-10
+./testing.sh: line 58: ./indexer: No such file or directory
+./indextest testing/index-letters-10 testing/rebuild-letters-10
+./testing.sh: line 59: ./indextest: No such file or directory
+
+echo ""
+
+echo "Checking memory with valgrind (indexer)..."
+Checking memory with valgrind (indexer)...
+
+valgrind --leak-check=full ./indexer ../data/letters-0 testing/valgrind-index-letters-0
+valgrind: ./indexer: No such file or directory
+valgrind --leak-check=full ./indexer ../data/letters-1 testing/valgrind-index-letters-1
+valgrind: ./indexer: No such file or directory
+valgrind --leak-check=full ./indexer ../data/letters-10 testing/valgrind-index-letters-10
+valgrind: ./indexer: No such file or directory
+
+echo ""
+
+echo "Checking memory with valgrind (indextest)..."
+Checking memory with valgrind (indextest)...
+
+valgrind --leak-check=full ./indextest testing/valgrind-index-letters-0 testing/rebuild-valgrind-letters-0
+valgrind: ./indextest: No such file or directory
+valgrind --leak-check=full ./indextest testing/valgrind-index-letters-1 testing/rebuild-valgrind-letters-1
+valgrind: ./indextest: No such file or directory
+valgrind --leak-check=full ./indextest testing/valgrind-index-letters-10 testing/rebuild-valgrind-letters-10
+valgrind: ./indextest: No such file or directory
+
+echo ""
+
+echo "Cleaning up..."
+Cleaning up...
+
+chmod +w readonly-dir
+chmod +w readonly-file
+
+rm -rf testing
+rm -rf readonly-dir
+rm -f readonly-file
+
+echo "All done!"
+All done!

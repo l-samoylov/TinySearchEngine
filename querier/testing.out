@@ -1,0 +1,198 @@
+bash -v ./testing.sh
+module () {  local _mlredir=1;
+ if [ -n "${MODULES_REDIRECT_OUTPUT+x}" ]; then
+ if [ "$MODULES_REDIRECT_OUTPUT" = '0' ]; then
+ _mlredir=0;
+ else
+ if [ "$MODULES_REDIRECT_OUTPUT" = '1' ]; then
+ _mlredir=1;
+ fi;
+ fi;
+ fi;
+ case " $@ " in 
+ *' --no-redirect '*)
+ _mlredir=0
+ ;;
+ *' --redirect '*)
+ _mlredir=1
+ ;;
+ esac;
+ if [ $_mlredir -eq 0 ]; then
+ _module_raw "$@";
+ else
+ _module_raw "$@" 2>&1;
+ fi
+}
+ml () {  module ml "$@"
+}
+_module_raw () {  eval "$(/usr/bin/tclsh8.6 '/usr/lib/x86_64-linux-gnu/modulecmd.tcl' bash "$@")";
+ _mlstatus=$?;
+ return $_mlstatus
+}
+#!/bin/bash
+
+# Lisa Samoylov CS50 Spring 2025
+# querier - testing.sh file
+# is there a way to make this shorter
+
+# Testing Querier Inputs  
+echo "TEST CMD LINE ARGS" 
+TEST CMD LINE ARGS
+echo "-------------"
+-------------
+echo "TEST 001: no arguments" 
+TEST 001: no arguments
+./querier 
+error : querier : validateQuerier : number of arguments passed != 2
+
+echo 
+
+echo "TEST 002: one argument" 
+TEST 002: one argument
+./querier ~/cs50-dev/shared/tse/output/crawler/pages-letters-depth-1
+error : querier : validateQuerier : number of arguments passed != 2
+
+echo 
+
+echo "TEST 003: three arguments" 
+TEST 003: three arguments
+./querier ~/cs50-dev/shared/tse/output/crawler/pages-letters-depth-1 ~/cs50-dev/shared/tse/output/indexer/index-letters-1 fooArg
+error : querier : validateQuerier : number of arguments passed != 2
+
+echo
+
+echo "Test 011: invalid pagedirectory" 
+Test 011: invalid pagedirectory
+./querier somePageDirectory ~/cs50-dev/shared/tse/output/indexer/index-letters-1
+error: pagedir.c: pagedir_validate: invalid .crawler/directory
+error : querier : validateQuerier : invalid pageDirectory
+
+echo
+
+echo "Test 012: invalid indexFilename" 
+Test 012: invalid indexFilename
+./querier ~/cs50-dev/shared/tse/output/crawler/pages-letters-depth-1 someIndexFilename
+error : querier : validateQuerier : invalidIndexname
+
+# Testing query syntax 
+echo 
+
+echo "TEST QUERY SYNTAX" 
+TEST QUERY SYNTAX
+echo "-------------"
+-------------
+echo "MAKING TEST FILE" 
+MAKING TEST FILE
+touch test.txt
+
+# test : skipping two-letter word
+echo "eh Hello" >> test.txt
+
+# test : skipping one-letter word 
+echo "a Hello" >> test.txt
+
+# ERROR : this is a known indexer failure 
+echo ";" >> test.txt 
+
+# test : skipping two char bad symbols 
+echo ";;" >> test.txt 
+
+# test : start and 
+echo "and blue" >> test.txt 
+
+# test : start or 
+echo "or blue" >> test.txt
+
+# test : double adjacent and 
+echo "blue and and red" >> test.txt
+
+# test : double adjacent or
+echo "red or or red" >> test.txt
+
+# test: adjacent and or
+echo "green and or red" >> test.txt
+
+# test adjacent or and 
+echo "green or and red" >> test.txt
+
+# running valgrind on it
+echo 
+
+echo "VALGRIND test.txt" 
+VALGRIND test.txt
+valgrind ./querier ~/cs50-dev/shared/tse/output/crawler/pages-letters-depth-10 ~/cs50-dev/shared/tse/output/indexer/index-letters-10 < test.txt
+==2435963== Memcheck, a memory error detector
+==2435963== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==2435963== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==2435963== Command: ./querier /thayerfs/home/f006g4g/cs50-dev/shared/tse/output/crawler/pages-letters-depth-10 /thayerfs/home/f006g4g/cs50-dev/shared/tse/output/indexer/index-letters-10
+==2435963== 
+Query?: Query: eh hello 
+no documents matched
+Query?: Query: a hello 
+no documents matched
+Query?: Query: ; 
+no documents matched
+Query?: Error: bad character ';' in query
+Query?: Error: 'and' cannot begin query
+Query?: Error: 'or' cannot begin query
+Query?: Error: 'and' and 'and' cannot be adjacent
+Query?: Error: 'or' and 'or' cannot be adjacent
+Query?: Error: 'and' and 'or' cannot be adjacent
+Query?: Error: 'or' and 'and' cannot be adjacent
+Query?: Query: eh hello 
+no documents matched
+Query?: Query: a hello 
+no documents matched
+Query?: Query: ; 
+no documents matched
+Query?: Error: bad character ';' in query
+Query?: Error: 'and' cannot begin query
+Query?: Error: 'or' cannot begin query
+Query?: Error: 'and' and 'and' cannot be adjacent
+Query?: Error: 'or' and 'or' cannot be adjacent
+Query?: Error: 'and' and 'or' cannot be adjacent
+Query?: Error: 'or' and 'and' cannot be adjacent
+Query?: ==2435963== 
+==2435963== HEAP SUMMARY:
+==2435963==     in use at exit: 2,382 bytes in 28 blocks
+==2435963==   total heap usage: 1,125 allocs, 1,097 frees, 49,105 bytes allocated
+==2435963== 
+==2435963== LEAK SUMMARY:
+==2435963==    definitely lost: 1,248 bytes in 14 blocks
+==2435963==    indirectly lost: 1,134 bytes in 14 blocks
+==2435963==      possibly lost: 0 bytes in 0 blocks
+==2435963==    still reachable: 0 bytes in 0 blocks
+==2435963==         suppressed: 0 bytes in 0 blocks
+==2435963== Rerun with --leak-check=full to see details of leaked memory
+==2435963== 
+==2435963== For lists of detected and suppressed errors, rerun with: -s
+==2435963== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+
+# Memory Leak Testing 
+echo 
+
+echo "TEST VALGRIND" 
+TEST VALGRIND
+echo "-------------"
+-------------
+echo "VALGRIND: fuzzquery.c + checking for leaks" 
+VALGRIND: fuzzquery.c + checking for leaks
+valgrind ./fuzzquery ~/cs50-dev/shared/tse/output/indexer/index-letters-10 20 5 | ./querier ~/cs50-dev/shared/tse/output/crawler/pages-letters-depth-10 ~/cs50-dev/shared/tse/output/indexer/index-letters-10
+valgrind: ./fuzzquery: No such file or directory
+Query?: 
+# Clean up 
+echo 
+
+echo "Removing created files" 
+Removing created files
+rm -f test.txt
+echo "All done!" 
+All done!
+
+# CS39 Tian Lecture 
+# --------------------
+# Q1 : 
+# for quantum computers 
+# apparently you have to recalibrate all the qubits after restarting the computer
+# if your qubits are so sensitive to the environment
+# what if someone else tries to view your qubits while you're using them? to mess with yo...
